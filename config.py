@@ -1,20 +1,20 @@
 env_vars = {
   # Get From my.telegram.org
-  "API_HASH": "3257596471c6d08212b3c0a47cc815ea",
+  "API_HASH": "f757ca005f4a320bcea5ced947bbff5e",
   # Get From my.telegram.org
-  "API_ID": "23578854",
+  "API_ID": "27011028",
   #Get For @BotFather
-  "BOT_TOKEN": "8034468565:AAEunXHqDvSfkPRI-Gmh-TU5IPUYSjj0gF8",
+  "BOT_TOKEN": "7505997121:AAFgGywTfb2-BYIqaRUPTd2W4RJNIn7bHK4",
   # Get For tembo.io
   "DATABASE_URL_PRIMARY": "postgresql://postgres:tTvmOOxCA4TBnFOR@ashamedly-large-feline.data-1.use1.tembo.io:5432/postgres",
   # Logs Channel Username Without @
   "CACHE_CHANNEL": "",
   # Force Subs Channel username without @
-  "CHANNEL": "Manga_Yugen",
+  "CHANNEL": "Manhwa_University",
   # {chap_num}: Chapter Number
   # {chap_name} : Manga Name
   # Ex : Chapter {chap_num} {chap_name} @Manhwa_Arena
-  "FNAME": "[MY] [{chap_num}] {chap_name} @Manga_Yugen"
+  "FNAME": "{chap_num}. {chap_name} "
 }
 
 dbname = env_vars.get('DATABASE_URL_PRIMARY') or env_vars.get('DATABASE_URL') or 'sqlite:///test.db'
