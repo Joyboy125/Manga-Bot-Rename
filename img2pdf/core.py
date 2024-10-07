@@ -56,14 +56,22 @@ def unicode_to_latin1(s):
 
 def img2pdf(files: List[Path], out: Path):
     pdf = FPDF('P', 'pt')
+
+    pdf.add_page(format=(718, 720)) 
+    pdf.image("photo_2024-10-06_12-24-29.jpg")
+
     for imageFile in files:
+
         img_bytes, width, height = pil_image(imageFile)
-        
+         
         pdf.add_page(format=(width, height))
 
         pdf.image(img_bytes, 0, 0, width, height)
 
         img_bytes.close()
+
+    pdf.add_page(format=(1280, 720))
+    pdf.image("manhwa.png")
 
     pdf.set_title(unicode_to_latin1(out.stem))
     pdf.output(out, "F")
