@@ -6,15 +6,19 @@ import re
 from dataclasses import dataclass
 import datetime as dt
 import json
+from pymongo import MongoClient # pip install pymongo [srv]
+
 
 import pyrogram.errors
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaDocument
 
-from config import env_vars, dbname
+from config import env_vars, dbname,username,password,db_name,collection_name,USER,DB_URL
 from img2cbz.core import fld2cbz
 from img2pdf.core import fld2pdf, fld2thumb
 from plugins import *
 import os
+from datetime import datetime,timedelta
+
 
 from pyrogram import Client, filters
 from typing import Dict, Tuple, List, TypedDict
@@ -67,8 +71,13 @@ plugin_dicts: Dict[str, Dict[str, MangaClient]] = {
 cache_dir = "cache"
 if os.path.exists(cache_dir):
     shutil.rmtree(cache_dir)
-with open("tools/help_message.txt", "r") as f:
-    help_msg = f.read()
+
+try:
+    with open("tools/help_message.txt", "r") as f:
+        help_msg = f.read()
+        
+except FileNotFoundError:
+    help_msg = "fk off"
 
 
 class OutputOptions(enum.IntEnum):
@@ -127,6 +136,292 @@ else:
     DB()
 
 
+USERNAME = username
+PASSWORD = password
+DATABASE_NAME = db_name
+COLLECTION_NAME = collection_name
+
+
+url =  f"mongodb+srv://{USERNAME}:{PASSWORD}@updatebot.qk2u8.mongodb.net/?retryWrites=true&w=majority&appName=updatebot"
+cluster = MongoClient(url)
+
+
+
+USER = USER
+papa = 6940268462
+STICKER_FILE_ID = "CAACAgUAAx0CfNus0AAChPNmmAfr-kFzXVVTBOdW4E6vr5ZV3QACYgsAAk-UcVWNLOopKhQSrR4E"
+UPDATE_CHANNEL_ID = -1002033463782
+file_queue = asyncio.Queue()
+last_phptosss = "manhwa.png"
+LAST_UPDATE_TIMESTAMPS = {}  # To store the last update timestamps for channels
+
+db = cluster[DATABASE_NAME]
+channels = db[COLLECTION_NAME]
+
+
+
+def create_message_select_query(ans):
+    text = "" 
+    for res in ans:
+        if res:
+            channel_name = res["channel_name"]
+            channel_id = res['channel_id']
+            text += f"\nChannel name: {str(channel_name)} " + f"\nChannel id: {str(channel_id)}\n\n"
+    message = f"<b>Received</b> Information about production:\n\n{text}\n"
+    return message
+
+
+def find(channel_id):
+    
+    results = channels.find({})
+    for result in results:
+        
+        if result['channel_id'] == channel_id:  # Ensure type matching
+            channel_name = result['channel_name']
+            channel_ids = result['channel_id']
+            
+            return (
+                f"Found ID in database: {channel_ids}\n"
+                f"Channel name in database: {channel_name}\n\n"
+            )
+    
+    return "Channel ID not found in the database."  # Default message if no match
+
+
+@bot.on_message(filters.private & filters.command("filter"))
+async def filter(client: Client, message):
+    list_of_words = message.text.split(" ")
+    
+    # Ensure the command has enough arguments
+    if len(list_of_words) < 2:
+        await message.reply("Please provide a channel ID.")
+        return
+    
+    try:
+        channel_id = int(list_of_words[1])
+    except ValueError:
+        await message.reply("Invalid channel ID format. Please provide a valid number.")
+        return
+
+    text = find(channel_id)
+    await bot.send_message(USER, text=text)
+    
+    
+   
+@bot.on_message(filters.private & filters.command("delete"))
+async def delete(client, message):
+
+    list_of_words = message.text.split(" ")
+    channel_id = int(list_of_words[1])
+
+    channels.delete_one({"channel_id": channel_id})
+
+    text = 'channel with id {} deleted '.format(channel_id)
+    await bot.send_message(USER, text=text)
+    
+    
+
+@bot.on_message(filters.private & filters.command("all_data"))
+async def all_data(client: Client, message: Message):
+
+    results = channels.find({})
+    text = create_message_select_query(results)
+
+    if len(text) > 4096:
+        # Calculate how many parts are needed
+        num_parts = (len(text) + 4096 - 1) // 4096  # This is equivalent to math.ceil(len(lst) / max_size)
+        # Split the list into sublists and print each one
+        for i in range(num_parts):
+            sublist = text[i * 4096:(i + 1) * 4096]
+            await client.send_message(chat_id=USER, text=sublist)
+            
+            
+
+async def channel_function(message, chat_id, NEW_FILE_CAPTION, NEW_FILE_NUMBER, post_link):
+
+        NEW_FILE_NUMBER = NEW_FILE_NUMBER
+        NEW_FILE_NAME = NEW_FILE_CAPTION
+        source_chat_id = chat_id
+        post_link = post_link
+        message_id = 1 
+        photo_id = None
+        while True:
+            message = await bot.get_messages(source_chat_id, message_ids=message_id)
+            if message.photo:
+                photo_id =  message.photo.file_id
+                break
+            message_id += 1
+        
+        await bot.send_photo(chat_id=UPDATE_CHANNEL_ID, photo=photo_id, caption=f"➤{NEW_FILE_NAME}\n➤ Chapter Updated - [[Chapter - {NEW_FILE_NUMBER}]]({post_link})")
+        await bot.send_sticker(chat_id=UPDATE_CHANNEL_ID, sticker=STICKER_FILE_ID)
+        
+        
+
+async def send_last(source_chat_id):
+
+    source_chat_id = source_chat_id
+    await bot.send_sticker(chat_id=source_chat_id, sticker="CAACAgQAAx0CfNus0AACjfBmsQoxfNRUuDtJO_nBuW6-etFQ1AACpQ8AAv2kAVD8Bg9J_IV47B4E")
+    await bot.send_photo(chat_id=source_chat_id, photo=last_phptosss, caption=(
+                                                        "➤ MANHWA UNIVERSITY \n\n"
+                                                        "➤ Main Channel: @Manhwa_University \n\n"
+                                                        "➤ Join Chat Group: @Indian_Manhwa_Club\n\n"
+                                                        "➤ Updates: @Manhwa_University_updates"
+                                                    )
+                                                )
+
+
+
+async def create_link(client, message):
+
+    source_chat = message.chat
+    source_chat_id = source_chat.id
+    message_id = message.id
+    if source_chat.username:
+        post_link = f"https://t.me/{source_chat.username}/{message_id}"
+    else:
+        try:
+            # Generate an invite link for the private channel
+            invite_link = await client.create_chat_invite_link(chat_id=source_chat_id)
+            post_link = invite_link.invite_link
+        except Exception as e:
+            logger.error(f"Error creating invite link: {e}")
+            post_link = "Unable to generate invite link"
+    return post_link
+
+
+@bot.on_message(filters.document & filters.chat([-1002155793773]))
+async def check_document(client: Client, message: Message):  
+
+    try:
+        if message.document:
+            file = message.document
+            chapter_name = file.file_name
+            NEW_FILE_NAME = chapter_name[5:-4]
+            NEW_FILE_NUMBER = chapter_name[:3]
+            
+            if file.mime_type == 'application/x-pdf' or file.file_name.endswith('.pdf'):
+                
+                # Query the database for all channels
+                results = channels.find({})
+                name_matched = False
+                
+                # Loop through the results to find a match
+                for result in results:
+                    
+                    if result["channel_name"] == NEW_FILE_NAME:
+                        
+                            channel_id = result["channel_id"]
+                     
+                            await bot.send_message(chat_id=USER, text="Name is matched")
+                            
+                            # Forward the document to the channel without forwarding tag
+                            chapter = await bot.copy_message(
+                                chat_id=channel_id, 
+                                from_chat_id=message.chat.id,
+                                message_id=message.id
+                            )
+                            await message.reply_text("file is forwaded to channel")
+
+                            chapter_link = await create_link(client, message=chapter)
+                            await channel_function(message, chat_id=channel_id, NEW_FILE_CAPTION=NEW_FILE_NAME,NEW_FILE_NUMBER=NEW_FILE_NUMBER, post_link=chapter_link)
+
+                            await send_last(source_chat_id=channel_id)
+                            
+                            name_matched = True
+                            break
+                
+                # If no match was found, notify the user
+                if not name_matched:
+                    await bot.send_message(chat_id=USER, text="No matching channel name found")
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        await bot.send_message(chat_id=USER, text=f"Error while checking channel name in database: {str(e)}")
+        
+        
+
+@bot.on_message((filters.private & filters.forwarded ))
+async def handle_forwarded_message(client, message):
+    
+    if message.document and message.forward_from_chat:
+        
+        file = message.document
+        original_channel_id = message.forward_from_chat.id
+        original_channel_title = message.forward_from_chat.title
+        chapter_name = file.file_name
+        
+        text_1 = (
+            f"Message forwarded from channel ID: {original_channel_id}\n"
+            f"Title: {original_channel_title}\n"
+            f"chapter name : {chapter_name}\n\n"
+        )
+        print(text_1)
+        await bot.send_message(USER, text=text_1)
+
+        results = channels.find({})
+        
+        for res in results:
+            
+            if original_channel_id == res["channel_id"]:
+                
+                channel_name = res["channel_name"]
+                channel_id = res["channel_id"]
+                
+                break
+            else:
+                channel_name = None
+                channel_id = None
+            
+        if channel_name and channel_id:
+            text_2 = (
+                f"Found ID in database: {channel_id}\n"
+                f"Channel name in database: {channel_name}\n\n"
+            )
+            print(text_2)
+            await bot.send_message(USER, text=text_2)
+
+            if original_channel_id == channel_id:
+                
+                new_channel_name = chapter_name[5:-4]  # Adjust the slice as needed
+                new_channel_id = original_channel_id
+                dt_string = datetime.now().strftime("%d-%m-%y")
+                
+                new_post_dict = {
+                    'channel_name': new_channel_name, 
+                    "channel_id": new_channel_id, 
+                    "LAST_TIME_UPDATES": dt_string
+                }
+                
+                channels.update_one({"channel_id": channel_id}, {"$set": new_post_dict})
+                
+                text_3 = (
+                    f"Updated the channel ID from: {channel_id} to {new_channel_id}\n"
+                    f"Updated the channel name from: {channel_name} to {new_channel_name}\n"
+                )
+                print(text_3)
+                await bot.send_message(USER, text=text_3)
+        else:
+            print(f"No matching ID found in the database for {original_channel_id}.")
+            await bot.send_message(USER, text="No matching channel ID found in the database.\n\n adding channel to database ")
+            
+            new_channel_name = chapter_name[5:-4]  # Adjust the slice as needed
+            new_channel_id = original_channel_id
+            dt_string = datetime.now().strftime("%d-%m-%y")
+                
+            new_post_dict = {
+                    'channel_name': new_channel_name, 
+                    "channel_id": new_channel_id, 
+                    "LAST_TIME_UPDATES": dt_string
+                }
+            
+            channels.insert_one(new_post_dict)
+            await bot.send_message(USER, text="channel added to database ")
+
+    else:
+        print("This message was not forwarded from a channel.")
+        await bot.send_message(USER, text="This message was not forwarded from a channel.")
+        
+
 @bot.on_message(filters=~(filters.private & filters.incoming))
 async def on_chat_or_channel_message(client: Client, message: Message):
     pass
@@ -161,6 +456,7 @@ async def on_private_message(client: Client, message: Message):
         raise
     except BaseException as e:
         logger.exception(e)
+
 
 
 @bot.on_message(filters=filters.command(['start']))
@@ -251,11 +547,6 @@ async def on_options_command(client: Client, message: Message):
     user_options = user_options.output if user_options else (1 << 30) - 1
     buttons = get_buttons_for_options(user_options)
     return await message.reply("Select the desired output format.", reply_markup=buttons)
-
-
-@bot.on_message(filters=filters.regex(r'^/'))
-async def on_unknown_command(client: Client, message: Message):
-    await message.reply("Unknown command")
 
 
 @bot.on_message(filters=filters.text)
@@ -723,3 +1014,7 @@ async def chapter_creation(worker_id: int = 0):
             logger.exception(f"Error sending chapter {chapter.name} to user {chat_id}")
         finally:
             pdf_queue.release(chat_id)
+            
+            
+              
+## UPDATERT BOT  
