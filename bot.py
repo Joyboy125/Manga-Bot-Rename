@@ -188,7 +188,7 @@ def find(channel_id):
     return "Channel ID not found in the database."  # Default message if no match
 
 
-@bot.on_message(filters.private & filters.command("filter"))
+@bot.on_message(filters.command("filter"))
 async def filter(client: Client, message):
     list_of_words = message.text.split(" ")
     
