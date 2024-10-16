@@ -8,7 +8,7 @@ env_vars = {
   #Get For @BotFather
   
   # zoro bot = 7505997121:AAFgGywTfb2-BYIqaRUPTd2W4RJNIn7bHK4
-  "BOT_TOKEN": "7250357906:AAEXZ9nIHLmASZ909wJLCBwadBCiO9xTRD8", # joy boy bot = 7250357906:AAEXZ9nIHLmASZ909wJLCBwadBCiO9xTRD8 
+  "BOT_TOKEN": "7505997121:AAFgGywTfb2-BYIqaRUPTd2W4RJNIn7bHK4", # joy boy bot = 7250357906:AAEXZ9nIHLmASZ909wJLCBwadBCiO9xTRD8 
 
   # Get For tembo.io
   "DATABASE_URL_PRIMARY": "postgresql://postgres:k0edUULYD0G6vZy0@fruitfully-legitimate-lemur.data-1.use1.tembo.io:5432/postgres",
